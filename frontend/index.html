@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnPath - 个性化学习路径规划器</title>
+<style>
+  /* =============================== */
+  /*   CSS Variables                 */
+  /* =============================== */
+  :root {
+    --sidebar-bg: #1b1d24;
+    --sidebar-hover: #262832;
+    --sidebar-active: #2a2d38;
+    --sidebar-text: #8b8fa3;
+    --sidebar-text-active: #ffffff;
+    --body-bg: #f0f2f5;
+    --card-bg: #ffffff;
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+    --card-hover-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    --text-primary: #1a1c23;
+    --text-secondary: #5a5d6b;
+    --text-muted: #9498a6;
+    --accent: #4f6ef7;
+    --accent-light: #eef1ff;
+    --success: #22c55e;
+    --warn: #f59e0b;
+    --border: #e8eaf0;
+    --bilibili-pink: #fb7299;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.2s ease;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+    background: var(--body-bg);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* =============================== */
+  /*   SIDEBAR                       */
+  /* =============================== */
+  .sidebar {
+    width: 240px; flex-shrink: 0;
+    background: var(--sidebar-bg);
+    display: flex; flex-direction: column;
+    padding: 0;
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    padding: 20px 20px 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #6366f1, #4f6ef7);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff;
+  }
+  .sidebar-logo .logo-text {
+    font-size: 16px; font-weight: 700; color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo .logo-text span { color: #818cf8; }
+
+  .sidebar-nav {
+    flex: 1; padding: 0 12px;
+    display: flex; flex-direction: column; gap: 2px;
+    overflow-y: auto; overflow-x: hidden;
+  }
+  .sidebar-nav::-webkit-scrollbar { width: 3px; }
+  .sidebar-nav::-webkit-scrollbar-thumb { background: #3a3d4a; border-radius: 2px; }
+  .sidebar-nav .nav-section {
+    font-size: 11px; color: #5a5d70;
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 8px 12px 6px; margin-top: 4px;
+  }
+  .sidebar-nav .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    color: var(--sidebar-text); font-size: 13px; font-weight: 450;
+    cursor: pointer; transition: all var(--transition);
+    text-decoration: none; position: relative;
+  }
+  .sidebar-nav .nav-item:hover {
+    background: var(--sidebar-hover);
+    color: #c0c3d0;
+  }
+  .sidebar-nav .nav-item.active {
+    background: var(--sidebar-active);
+    color: var(--sidebar-text-active);
+    font-weight: 550;
+  }
+  .sidebar-nav .nav-item .nav-icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
+  .sidebar-nav .nav-item .nav-badge {
+    margin-left: auto; font-size: 10px;
+    background: var(--accent); color: #fff;
+    padding: 2px 7px; border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .sidebar-user {
+    padding: 14px 16px; border-top: 1px solid #2a2d38;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-user .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #fff;
+  }
+  .sidebar-user .user-info { font-size: 12px; color: #8b8fa3; }
+  .sidebar-user .user-info strong { display: block; color: #d0d3e0; font-weight: 500; }
+
+  /* =============================== */
+  /*   MAIN CONTENT                  */
+  /* =============================== */
+  .main {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; min-width: 0;
+  }
+
+  /* ---- top bar ---- */
+  .topbar {
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 14px 28px; display: flex; align-items: center; gap: 16px;
+    flex-shrink: 0;
+  }
+  .topbar .breadcrumb {
+    font-size: 13px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .topbar .breadcrumb span { color: var(--text-primary); font-weight: 600; }
+  .topbar h2 {
+    font-size: 18px; font-weight: 700;
+    color: var(--text-primary); letter-spacing: -0.3px;
+  }
+  .topbar .topbar-actions {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .topbar .btn-new {
+    padding: 8px 16px; border-radius: 8px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 550; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .topbar .btn-new:hover { opacity: 0.9; }
+
+  /* ---- content area ---- */
+  .content-area {
+    flex: 1; overflow-y: auto; padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .content-area::-webkit-scrollbar { width: 6px; }
+  .content-area::-webkit-scrollbar-thumb { background: #d0d3e0; border-radius: 3px; }
+
+  /* ---- stats row ---- */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .stat-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--card-shadow);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .stat-card .stat-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .stat-card .stat-icon.blue { background: #eef2ff; color: #4f6ef7; }
+  .stat-card .stat-icon.green { background: #ecfdf5; color: #22c55e; }
+  .stat-card .stat-icon.amber { background: #fffbeb; color: #f59e0b; }
+  .stat-card .stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+  .stat-card .stat-info .stat-num { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+  .stat-card .stat-info .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ---- week progress ---- */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-header h3 {
+    font-size: 16px; font-weight: 650; color: var(--text-primary);
+  }
+  .section-header .view-all {
+    font-size: 13px; color: var(--accent); cursor: pointer; text-decoration: none;
+  }
+
+  .progress-bar-large {
+    background: #fff; border-radius: var(--radius);
+    padding: 20px 24px; box-shadow: var(--card-shadow);
+  }
+  .progress-bar-large .bar-header {
+    display: flex; justify-content: space-between; margin-bottom: 10px;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .progress-bar-large .bar-header strong { font-weight: 600; }
+  .progress-bar-large .bar-track {
+    height: 8px; background: #e8eaf0; border-radius: 4px; overflow: hidden;
+  }
+  .progress-bar-large .bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, #6366f1, #4f6ef7);
+    transition: width 0.5s ease;
+  }
+  .progress-bar-large .bar-milestones {
+    display: flex; justify-content: space-between; margin-top: 10px;
+    font-size: 11px; color: var(--text-muted);
+  }
+
+  /* ---- course grid ---- */
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .course-card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: all var(--transition);
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    border: 1px solid transparent;
+  }
+  .course-card:hover {
+    box-shadow: var(--card-hover-shadow);
+    transform: translateY(-2px);
+    border-color: #e0e4f0;
+  }
+
+  .course-thumb {
+    position: relative;
+    width: 100%; height: 180px;
+    background: linear-gradient(135deg, #1e2140, #2d3154);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .course-thumb img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .course-thumb .thumb-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.6) 100%);
+  }
+  .course-thumb .duration-badge {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,0.75); color: #fff;
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 500;
+  }
+  .course-thumb .play-badge {
+    position: absolute; bottom: 10px; left: 10px;
+    color: #fff; font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .course-thumb .platform-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--bilibili-pink); color: #fff;
+    padding: 4px 10px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .course-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; }
+  .course-body .course-title {
+    font-size: 14px; font-weight: 600; color: var(--text-primary);
+    line-height: 1.4; margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .course-body .course-meta {
+    font-size: 12px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .course-body .course-meta span { display: flex; align-items: center; gap: 4px; }
+  .course-body .course-desc {
+    font-size: 12px; color: var(--text-secondary);
+    line-height: 1.5; margin-bottom: 10px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+  }
+  .course-body .course-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 10px; border-top: 1px solid #f0f1f5;
+  }
+  .course-body .course-tag {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: #eef2ff; color: #4f6ef7; font-weight: 500;
+  }
+  .course-body .course-link {
+    font-size: 12px; color: var(--bilibili-pink);
+    text-decoration: none; font-weight: 500;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .course-body .course-link:hover { text-decoration: underline; }
+
+  /* ---- empty state ---- */
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 80px 40px; text-align: center;
+  }
+  .empty-state .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.6; }
+  .empty-state h3 { font-size: 18px; color: var(--text-primary); margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; color: var(--text-muted); max-width: 400px; line-height: 1.6; }
+
+  /* ---- week section ---- */
+  .week-section {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--card-shadow); margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .week-section .week-header {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .week-section .week-number {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .week-section .week-title {
+    font-size: 15px; font-weight: 650; color: var(--text-primary);
+  }
+  .week-section .week-task-count {
+    font-size: 12px; color: var(--text-muted); margin-left: auto;
+  }
+  .week-section .task-list {
+    padding: 8px 20px;
+  }
+  .week-section .task-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #f5f6fa;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .week-section .task-item:last-child { border-bottom: none; }
+  .week-section .task-item input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--accent);
+    cursor: pointer; margin-top: 2px; flex-shrink: 0;
+  }
+  .week-section .task-item.done label { text-decoration: line-through; color: var(--text-muted); }
+  .week-section .task-item label { cursor: pointer; flex: 1; }
+
+  /* ---- right panel: AI chat ---- */
+  .right-panel {
+    width: 380px; flex-shrink: 0;
+    background: #fff; border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 5;
+  }
+  .right-panel .panel-header {
+    padding: 16px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .right-panel .panel-header h3 {
+    font-size: 14px; font-weight: 650;
+  }
+  .right-panel .panel-header .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  .right-panel .chat-log {
+    flex: 1; overflow-y: auto; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .right-panel .chat-log::-webkit-scrollbar { width: 4px; }
+  .right-panel .chat-log::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  .chat-msg { display: flex; gap: 8px; animation: msgIn 0.25s ease; }
+  @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .chat-msg .chat-avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .chat-msg.user .chat-avatar { background: #eef2ff; }
+  .chat-msg.assistant .chat-avatar { background: linear-gradient(135deg, #6366f1, #4f6ef7); }
+  .chat-msg .chat-bubble {
+    max-width: 85%; padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  }
+  .chat-msg.user { flex-direction: row-reverse; }
+  .chat-msg.user .chat-bubble { background: #eef2ff; color: #1a1c23; border-bottom-right-radius: 3px; }
+  .chat-msg.assistant .chat-bubble { background: #f5f6fa; color: #1a1c23; border-bottom-left-radius: 3px; }
+  .chat-msg .chat-bubble b { color: var(--accent); }
+
+  .right-panel .chat-input-area {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+  }
+  .right-panel .chat-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+  }
+  .chat-chip {
+    padding: 5px 12px; border-radius: 16px; font-size: 11px;
+    border: 1px solid #e0e4f0; background: #fafbfc;
+    color: var(--text-secondary); cursor: pointer;
+    transition: all var(--transition); user-select: none;
+  }
+  .chat-chip:hover { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+  .right-panel .chat-input-row {
+    display: flex; gap: 8px;
+  }
+  .right-panel .chat-input-row input {
+    flex: 1; padding: 9px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: #fafbfc;
+    font-size: 13px; outline: none; transition: border var(--transition);
+  }
+  .right-panel .chat-input-row input:focus { border-color: var(--accent); }
+  .right-panel .chat-input-row button {
+    padding: 9px 16px; border-radius: 8px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 550; cursor: pointer;
+  }
+  .right-panel .chat-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .typing-indicator { display: flex; gap: 4px; padding: 6px 0; }
+  .typing-indicator span {
+    width: 6px; height: 6px; border-radius: 50%; background: #c0c3d0;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+  .typing-indicator span:nth-child(1){animation-delay:-0.32s;}
+  .typing-indicator span:nth-child(2){animation-delay:-0.16s;}
+  @keyframes bounce { 0%,80%,100%{transform:scale(0);} 40%{transform:scale(1);} }
+
+  /* ---- drag handle ---- */
+  .task-item .drag-handle {
+    cursor: grab; color: #c0c3d0; font-size: 14px;
+    flex-shrink: 0; margin-right: 2px; user-select: none;
+    letter-spacing: -1px;
+  }
+  .task-item .drag-handle:active { cursor: grabbing; }
+  .task-item.drag-over { background: #eef2ff; border-radius: 6px; }
+
+  /* ---- quiz ---- */
+  .quiz-section {
+    padding: 12px 20px 16px; border-top: 1px solid var(--border);
+    background: #fafbfc;
+  }
+  .quiz-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .quiz-card .quiz-q {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-primary); margin-bottom: 10px;
+  }
+  .quiz-card .quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+  .quiz-card .quiz-opt {
+    padding: 8px 12px; border-radius: 6px;
+    border: 1px solid var(--border); background: #fff;
+    font-size: 12px; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .quiz-card .quiz-opt:hover { border-color: var(--accent); background: #eef2ff; }
+  .quiz-card .quiz-opt.correct { border-color: var(--success); background: #ecfdf5; color: #15803d; }
+  .quiz-card .quiz-opt.wrong { border-color: #ef4444; background: #fef2f2; color: #dc2626; }
+  .quiz-card .quiz-opt:disabled { pointer-events: none; }
+  .quiz-ask-btn {
+    font-size: 11px; color: var(--accent); cursor: pointer;
+    padding: 3px 10px; border-radius: 12px;
+    border: 1px solid transparent; transition: all var(--transition);
+    user-select: none;
+  }
+  .quiz-ask-btn:hover { background: #eef2ff; border-color: var(--accent); }
+  .quiz-score {
+    font-size: 14px; font-weight: 650; text-align: center;
+    padding: 10px; margin-bottom: 10px; border-radius: 8px;
+  }
+  .quiz-score.good { background: #ecfdf5; color: #15803d; }
+  .quiz-score.ok { background: #fffbeb; color: #b45309; }
+  .quiz-score.bad { background: #fef2f2; color: #dc2626; }
+  .btn-quiz {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--accent);
+    background: #fff; color: var(--accent);
+    font-size: 12px; font-weight: 550; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .btn-quiz:hover { background: #eef2ff; }
+  .btn-quiz:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ---- export ---- */
+  .btn-export {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: #fff; color: var(--text-secondary);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- archive list in sidebar ---- */
+  .archive-list { padding: 0 12px; }
+  .archive-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 6px;
+    color: var(--sidebar-text); font-size: 12px;
+    cursor: pointer; transition: all var(--transition);
+    margin-bottom: 2px;
+  }
+  .archive-item:hover { background: var(--sidebar-hover); color: #c0c3d0; }
+  .archive-item.active { background: var(--sidebar-active); color: var(--sidebar-text-active); }
+  .archive-item .archive-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--accent);
+  }
+  .archive-item .archive-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .archive-item .archive-del {
+    font-size: 14px; color: #5a5d70; flex-shrink: 0;
+    padding: 2px 4px; border-radius: 4px; line-height: 1;
+  }
+  .archive-item .archive-del:hover { background: #ef4444; color: #fff; }
+  .archive-item .archive-edit-btn { opacity: 0; transition: opacity var(--transition); }
+  .archive-item:hover .archive-edit-btn { opacity: 1; }
+  .archive-item .archive-edit-btn:hover { background: #3a3d4a; color: #c0c3d0; }
+  .archive-item .archive-edit-input {
+    flex: 1; background: #2a2d38; border: 1px solid var(--accent);
+    color: #fff; font-size: 12px; padding: 2px 6px; border-radius: 4px;
+    outline: none; min-width: 0;
+  }
+
+  /* ---- wrong answers in sidebar ---- */
+  .wrong-list { padding: 0 12px; }
+  .wrong-item {
+    display: flex; align-items: flex-start; gap: 6px;
+    padding: 6px 8px; border-radius: 6px;
+    color: var(--sidebar-text); font-size: 11px;
+    cursor: pointer; transition: all var(--transition);
+    margin-bottom: 2px; line-height: 1.4;
+  }
+  .wrong-item:hover { background: var(--sidebar-hover); color: #c0c3d0; }
+  .wrong-item .wrong-q { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wrong-item .wrong-del {
+    font-size: 13px; color: #5a5d70; flex-shrink: 0;
+    padding: 1px 4px; border-radius: 3px; line-height: 1;
+  }
+  .wrong-item .wrong-del:hover { background: #ef4444; color: #fff; }
+  .wrong-empty { font-size: 11px; color: #5a5d70; padding: 10px 12px; text-align: center; }
+
+  /* ---- wrong view (full page) ---- */
+  .wrong-view-card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--card-shadow); margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .wrong-view-card .wv-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; font-weight: 650; color: var(--text-primary);
+  }
+  .wrong-view-card .wv-body { padding: 12px 20px; }
+  .wrong-view-card .wv-question {
+    padding: 10px 0; border-bottom: 1px solid #f5f6fa;
+  }
+  .wrong-view-card .wv-question:last-child { border-bottom: none; }
+  .wrong-view-card .wv-q-title {
+    font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;
+  }
+  .wrong-view-card .wv-options { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .wrong-view-card .wv-opt {
+    font-size: 12px; padding: 5px 10px; border-radius: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .wrong-view-card .wv-opt.correct { background: #ecfdf5; color: #15803d; }
+  .wrong-view-card .wv-opt.wrong { background: #fef2f2; color: #dc2626; }
+  .wrong-view-card .wv-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+    padding-top: 6px;
+  }
+  .wrong-view-card .wv-btn {
+    font-size: 11px; padding: 4px 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: #fafbfc; color: var(--text-secondary);
+    transition: all var(--transition);
+  }
+  .wrong-view-card .wv-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .wrong-view-card .wv-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
+
+  /* ---- summary ---- */
+  .summary-section {
+    padding: 12px 20px 16px; border-top: 1px solid var(--border);
+    background: #fafbfc;
+  }
+  .summary-content {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    font-size: 13px; line-height: 1.7; color: var(--text-secondary);
+    max-height: 360px; overflow-y: auto;
+  }
+  .summary-content h3 { font-size: 14px; color: var(--text-primary); margin: 10px 0 6px; }
+  .summary-content h3:first-child { margin-top: 0; }
+  .summary-content ul { padding-left: 18px; margin: 4px 0; }
+  .summary-content li { margin-bottom: 3px; }
+  .btn-summary {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid #8b5cf6;
+    background: #fff; color: #8b5cf6;
+    font-size: 12px; font-weight: 550; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .btn-summary:hover { background: #f5f3ff; }
+  .btn-summary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ---- mobile ---- */
+  @media (max-width: 1100px) {
+    .right-panel { display: none; }
+    .sidebar { width: 60px; }
+    .sidebar .logo-text,
+    .sidebar .nav-item span:not(.nav-icon),
+    .sidebar .nav-section,
+    .sidebar .nav-badge,
+    .sidebar .user-info,
+    .sidebar .archive-list,
+    .sidebar .wrong-list { display: none; }
+    .sidebar-logo { padding: 16px; justify-content: center; }
+    .sidebar-nav { padding: 0 8px; }
+    .sidebar-nav .nav-item { justify-content: center; padding: 12px; }
+    .sidebar-user { justify-content: center; padding: 10px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .course-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== SIDEBAR ==================== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">Learn<span>Path</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">学习计划</div>
+    <a class="nav-item active" id="navOverview" onclick="switchView('overview')">
+      <span class="nav-icon">📊</span> 总览
+    </a>
+    <div class="nav-item" id="navWeekList" style="display:none;flex-direction:column;gap:0;">
+      <!-- 动态填充 -->
+    </div>
+    <div class="nav-section">工具</div>
+    <a class="nav-item" id="navChat" onclick="switchView('chat')">
+      <span class="nav-icon">💬</span> AI 对话
+      <span class="nav-badge" id="chatBadge" style="display:none;">新</span>
+    </a>
+    <a class="nav-item" id="navWrong" onclick="switchView('wrong')" style="display:none;">
+      <span class="nav-icon">📝</span> 错题集
+      <span class="nav-badge" id="wrongBadge" style="display:none;">0</span>
+    </a>
+    <a class="nav-item" onclick="resetAll()">
+      <span class="nav-icon">💾</span> 保存并新建学习项目
+    </a>
+    <div class="nav-section" id="wrongSection">错题集 <span id="wrongCount" style="font-weight:400;font-size:10px;"></span></div>
+    <div class="wrong-list" id="wrongList"></div>
+    <div class="nav-section">我的存档</div>
+    <div class="archive-list" id="archiveList"></div>
+  </nav>
+  <div class="sidebar-user">
+    <div class="avatar">👤</div>
+    <div class="user-info">
+      <strong>学习者</strong>
+      <span id="sidebarSkill">准备开始</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<div class="main">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <h2 id="pageTitle">学习仪表盘</h2>
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="topbar-actions">
+      <button class="btn-export" onclick="exportMarkdown()" id="btnExport" style="display:none;" title="导出为 Markdown">📥 导出</button>
+      <button class="btn-new" onclick="focusChat()">✨ 开始新的学习计划</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area" id="contentArea">
+    <!-- 默认空状态 -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🚀</div>
+      <h3>开始你的学习之旅</h3>
+      <p>在右侧 AI 对话面板中输入你想学习的技能（如"Python爬虫"），AI 将为你定制个性化的学习计划并推荐 B 站高播放量课程。</p>
+    </div>
+
+    <!-- 错题集视图 -->
+    <div id="wrongView" style="display:none;">
+      <div class="section-header" style="margin-bottom:16px;">
+        <h3>📝 错题集</h3>
+        <span style="font-size:13px;color:var(--text-muted);" id="wrongViewCount"></span>
+      </div>
+      <div id="wrongViewContent"></div>
+    </div>
+
+    <!-- Dashboard 视图（生成计划后显示） -->
+    <div id="dashboardView" style="display:none;">
+      <!-- 统计卡片 -->
+      <div class="stats-row" id="statsRow"></div>
+      <!-- 进度条 -->
+      <div class="progress-bar-large" id="progressBar" style="display:none;">
+        <div class="bar-header"><span>总体完成进度</span><strong id="progressText">0%</strong></div>
+        <div class="bar-track"><div class="bar-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="bar-milestones" id="milestones"></div>
+      </div>
+      <!-- 每周内容 -->
+      <div id="weekSections"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== RIGHT PANEL: AI Chat ==================== -->
+<div class="right-panel" id="chatPanel">
+  <div class="panel-header" id="panelHeader">
+    <div class="status-dot"></div>
+    <h3 id="panelTitle">AI 学习规划师</h3>
+    <span id="panelBadge" style="display:none;font-size:10px;background:#eef2ff;color:#4f6ef7;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:auto;">💬 答疑中</span>
+  </div>
+  <div class="chat-log" id="chatLog"></div>
+  <div class="chat-input-area">
+    <div class="chat-chips" id="chatChips"></div>
+    <div class="chat-input-row">
+      <input id="chatInput" type="text" placeholder="输入你想学习的技能..."
+        onkeydown="if(event.key==='Enter')sendChat()" />
+      <button id="sendBtn" onclick="sendChat()">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+// ==================== CONFIG ====================
+const API_BASE = 'http://localhost:5000';
+const LS_KEY = 'learnpath_data';
+let sessionId = localStorage.getItem('learnpath_sid') || 'user_' + Date.now();
+localStorage.setItem('learnpath_sid', sessionId);
+let currentState = 'init';
+let planWeeks = [];
+let profile = {};
+let isWaiting = false;
+let archives = [];
+let activeArchiveId = null;
+let pendingState = 'init';
+let pendingProfile = null;
+
+// ==================== DOM ====================
+const chatLog   = document.getElementById('chatLog');
+const chatInput = document.getElementById('chatInput');
+const sendBtn   = document.getElementById('sendBtn');
+const chatChips = document.getElementById('chatChips');
+const contentArea = document.getElementById('contentArea');
+const emptyState = document.getElementById('emptyState');
+const dashboardView = document.getElementById('dashboardView');
+const weekSections = document.getElementById('weekSections');
+const statsRow = document.getElementById('statsRow');
+const pageTitle = document.getElementById('pageTitle');
+const breadcrumb = document.getElementById('breadcrumb');
+const chatBadge = document.getElementById('chatBadge');
+const archiveList = document.getElementById('archiveList');
+const btnExport = document.getElementById('btnExport');
+
+// ==================== LOCALSTORAGE ====================
+function saveData() {
+  if (!activeArchiveId) return;
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{"archives":[],"activeArchiveId":null,"pendingState":"init","pendingProfile":null}');
+  const idx = data.archives.findIndex(a => a.id === activeArchiveId);
+  const existingWrong = idx >= 0 ? (data.archives[idx].wrongAnswers || []) : [];
+  const entry = {
+    id: activeArchiveId,
+    skill: profile.skill || '未命名',
+    profile: JSON.parse(JSON.stringify(profile)),
+    planWeeks: JSON.parse(JSON.stringify(planWeeks)),
+    wrongAnswers: existingWrong,
+    createdAt: data.archives[idx] ? data.archives[idx].createdAt : Date.now()
+  };
+  if (idx >= 0) {
+    data.archives[idx] = entry;
+  } else {
+    data.archives.push(entry);
+  }
+  data.activeArchiveId = activeArchiveId;
+  data.pendingState = pendingState;
+  data.pendingProfile = pendingProfile;
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  archives = data.archives;
+  showSaveToast();
+}
+
+function showSaveToast() {
+  const existing = document.getElementById('saveToast');
+  if (existing) { existing.remove(); }
+  const toast = document.createElement('div');
+  toast.id = 'saveToast';
+  toast.textContent = '💾 已自动保存';
+  Object.assign(toast.style, {
+    position: 'fixed', bottom: '24px', right: '420px',
+    background: '#22c55e', color: '#fff', padding: '8px 18px',
+    borderRadius: '20px', fontSize: '13px', fontWeight: '550',
+    zIndex: '999', opacity: '1', transition: 'opacity 0.4s ease',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  });
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2000);
+}
+
+function loadData() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    archives = data.archives || [];
+    pendingState = data.pendingState || 'init';
+    pendingProfile = data.pendingProfile || null;
+    activeArchiveId = data.activeArchiveId;
+
+    if (activeArchiveId) {
+      const cur = archives.find(a => a.id === activeArchiveId);
+      if (cur) {
+        profile = cur.profile || {};
+        planWeeks = cur.planWeeks || [];
+        currentState = 'plan_ready';
+        return true;
+      }
+    }
+
+    if (pendingState !== 'init' && pendingProfile) {
+      profile = pendingProfile;
+      currentState = pendingState;
+      return false;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+function archiveCurrentPlan() {
+  if (!activeArchiveId || planWeeks.length === 0) return;
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{"archives":[],"activeArchiveId":null,"pendingState":"init","pendingProfile":null}');
+  const idx = data.archives.findIndex(a => a.id === activeArchiveId);
+  const existingWrong = idx >= 0 ? (data.archives[idx].wrongAnswers || []) : [];
+  const entry = {
+    id: activeArchiveId,
+    skill: profile.skill || '未命名',
+    profile: JSON.parse(JSON.stringify(profile)),
+    planWeeks: JSON.parse(JSON.stringify(planWeeks)),
+    wrongAnswers: existingWrong,
+    createdAt: idx >= 0 ? data.archives[idx].createdAt : Date.now()
+  };
+  if (idx >= 0) {
+    data.archives[idx] = entry;
+  } else {
+    data.archives.push(entry);
+  }
+  data.activeArchiveId = null;
+  data.pendingState = 'init';
+  data.pendingProfile = null;
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  archives = data.archives;
+}
+
+// ==================== ARCHIVE MANAGEMENT ====================
+function renderArchiveList() {
+  if (!archiveList) return;
+  archiveList.innerHTML = archives.map(a => {
+    const active = a.id === activeArchiveId ? ' active' : '';
+    const date = new Date(a.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+    return `<div class="archive-item${active}" onclick="switchArchive('${a.id}')">
+      <span class="archive-dot"></span>
+      <span class="archive-name" title="${a.skill}" ondblclick="event.stopPropagation();startRename('${a.id}', this)">${a.skill}</span>
+      <span class="archive-edit-btn" onclick="event.stopPropagation();startRename('${a.id}', this.parentElement.querySelector('.archive-name'))" title="修改名称" style="cursor:pointer;color:#5a5d70;font-size:11px;flex-shrink:0;padding:2px 4px;border-radius:3px;">✎</span>
+      <span style="font-size:10px;color:#5a5d70;flex-shrink:0;">${date}</span>
+      <span class="archive-del" onclick="event.stopPropagation();deleteArchive('${a.id}')" title="删除存档">×</span>
+    </div>`;
+  }).join('');
+}
+
+function startRename(id, el) {
+  const oldName = el.textContent;
+  const input = document.createElement('input');
+  input.className = 'archive-edit-input';
+  input.value = oldName;
+  input.maxLength = 20;
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') { input.blur(); }
+    if (e.key === 'Escape') { input.value = oldName; input.blur(); }
+  };
+  input.onblur = () => {
+    const newName = input.value.trim();
+    if (newName && newName !== oldName) {
+      const data = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      const entry = (data.archives || []).find(a => a.id === id);
+      if (entry) { entry.skill = newName; }
+      localStorage.setItem(LS_KEY, JSON.stringify(data));
+      archives = data.archives || [];
+      if (activeArchiveId === id && planWeeks.length > 0) {
+        profile.skill = newName;
+        document.getElementById('sidebarSkill').textContent = newName;
+        pageTitle.textContent = newName + ' · 学习计划';
+        saveData();
+      }
+    }
+    renderArchiveList();
+  };
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+}
+
+function switchArchive(id) {
+  archiveCurrentPlan();
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+  const cur = (data.archives || []).find(a => a.id === id);
+  if (!cur) return;
+  data.activeArchiveId = id;
+  data.pendingState = 'plan_ready';
+  data.pendingProfile = cur.profile;
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  activeArchiveId = id;
+  profile = cur.profile || {};
+  planWeeks = cur.planWeeks || [];
+  currentState = 'plan_ready';
+  pendingState = 'plan_ready';
+  pendingProfile = cur.profile;
+  archives = data.archives || [];
+  chatLog.innerHTML = '';
+  addChatMsg('assistant', `📂 已切换到「<b>${profile.skill || '未命名'}</b>」的学习计划。<br><br>右侧对话窗口可以直接向 AI 导师提问。`);
+  setChatChips(['💾 保存并新建学习项目', '📺 推荐更多资源', '✏️ 调整当前计划', '💡 提问学习问题']);
+  renderDashboard();
+  renderArchiveList();
+  renderWrongAnswers();
+  setPanelMode('tutor');
+  btnExport.style.display = 'inline-block';
+}
+
+function deleteArchive(id) {
+  if (!confirm('确定删除这个存档吗？此操作不可恢复。')) return;
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+  data.archives = (data.archives || []).filter(a => a.id !== id);
+  archives = data.archives;
+  if (data.activeArchiveId === id) {
+    data.activeArchiveId = null;
+    data.pendingState = 'init';
+    data.pendingProfile = null;
+    activeArchiveId = null;
+    currentState = 'init';
+    planWeeks = [];
+    profile = {};
+    pendingState = 'init';
+    pendingProfile = null;
+    emptyState.style.display = 'flex';
+    dashboardView.style.display = 'none';
+    pageTitle.textContent = '学习仪表盘';
+    document.getElementById('sidebarSkill').textContent = '准备开始';
+    document.getElementById('navWeekList').style.display = 'none';
+    btnExport.style.display = 'none';
+    chatLog.innerHTML = '';
+    addChatMsg('assistant', '👋 存档已删除。你想学习什么新技能？');
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  renderArchiveList();
+}
+
+// ==================== CHAT ====================
+function scrollChat() { chatLog.scrollTop = chatLog.scrollHeight; }
+
+function addChatMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  const avatar = document.createElement('div');
+  avatar.className = 'chat-avatar';
+  avatar.textContent = role === 'user' ? '👤' : '🤖';
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.innerHTML = text.replace(/\n/g, '<br>');
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  chatLog.appendChild(div);
+  scrollChat();
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'chat-msg assistant';
+  div.id = 'typingIndicator';
+  div.innerHTML = '<div class="chat-avatar">🤖</div><div class="chat-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+  chatLog.appendChild(div);
+  scrollChat();
+}
+function hideTyping() { const e = document.getElementById('typingIndicator'); if(e) e.remove(); }
+
+function setChatChips(opts) {
+  chatChips.innerHTML = opts.map(o =>
+    `<span class="chat-chip" onclick="pickChip('${o.replace(/'/g,"\\'")}')">${o}</span>`
+  ).join('');
+}
+function pickChip(v) {
+  if (v.startsWith('💡')) {
+    chatInput.value = '';
+    chatInput.placeholder = '输入你的学习问题...';
+    chatInput.focus();
+  } else {
+    chatInput.value = v;
+    sendChat();
+  }
+}
+
+async function sendChat() {
+  if (isWaiting) return;
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = '';
+
+  // Save pending profile during Q&A flow
+  if (currentState === 'init' && !activeArchiveId) {
+    activeArchiveId = 'arc_' + Date.now();
+  }
+
+  addChatMsg('user', text);
+  isWaiting = true;
+  sendBtn.disabled = true;
+  chatInput.disabled = true;
+  chatChips.innerHTML = '';
+  showTyping();
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, message: text })
+    });
+    const data = await resp.json();
+    hideTyping();
+
+    if (data.error) {
+      addChatMsg('assistant', '❌ ' + data.error);
+    } else {
+      addChatMsg('assistant', data.reply);
+      if (data.chips && data.chips.length > 0) {
+        setChatChips(data.chips);
+      }
+      // Detect reset: backend returned init state while we had an active plan
+      if (data.state === 'init' && currentState === 'plan_ready' && planWeeks.length > 0) {
+        archiveCurrentPlan();
+        activeArchiveId = null;
+        planWeeks = [];
+        profile = {};
+        pendingState = 'init';
+        pendingProfile = null;
+        emptyState.style.display = 'flex';
+        dashboardView.style.display = 'none';
+        pageTitle.textContent = '学习仪表盘';
+        document.getElementById('sidebarSkill').textContent = '准备开始';
+        document.getElementById('navWeekList').style.display = 'none';
+        btnExport.style.display = 'none';
+        renderArchiveList();
+      } else if (data.plan_weeks && data.plan_weeks.length > 0) {
+        planWeeks = data.plan_weeks;
+        profile = data.profile || {};
+        currentState = 'plan_ready';
+        pendingState = 'plan_ready';
+        pendingProfile = profile;
+        if (data.plan_changed !== false) {
+          renderDashboard();
+          saveData();
+          renderArchiveList();
+          renderWrongAnswers();
+          setPanelMode('tutor');
+          document.getElementById('sidebarSkill').textContent = profile.skill || '';
+          btnExport.style.display = 'inline-block';
+        }
+      }
+      if (data.state) {
+        currentState = data.state;
+        pendingState = data.state;
+        if (data.profile && data.state !== 'init') {
+          pendingProfile = data.profile;
+          profile = data.profile;
+        }
+      }
+    }
+  } catch (err) {
+    hideTyping();
+    addChatMsg('assistant', '❌ 无法连接到后端服务。请确保 Flask 已启动（python app.py）。\n\n错误：' + err.message);
+  }
+
+  isWaiting = false;
+  sendBtn.disabled = false;
+  chatInput.disabled = false;
+  chatInput.focus();
+}
+
+// ==================== DASHBOARD RENDERING ====================
+function renderDashboard() {
+  emptyState.style.display = 'none';
+  dashboardView.style.display = 'block';
+  pageTitle.textContent = (profile.skill || '学习') + ' · 学习计划';
+
+  let totalTasks = 0, doneTasks = 0;
+  planWeeks.forEach(w => w.tasks && w.tasks.forEach(t => { totalTasks++; if(t.done) doneTasks++; }));
+  let totalResources = 0;
+  planWeeks.forEach(w => { if(w.resources) totalResources += w.resources.length; });
+
+  statsRow.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon blue">📚</div>
+      <div class="stat-info"><div class="stat-num">${planWeeks.length}</div><div class="stat-label">学习周数</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-info"><div class="stat-num">${doneTasks}/${totalTasks}</div><div class="stat-label">任务完成</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon amber">📺</div>
+      <div class="stat-info"><div class="stat-num">${totalResources}</div><div class="stat-label">B站课程资源</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">⏰</div>
+      <div class="stat-info"><div class="stat-num">${profile.hours || '--'}</div><div class="stat-label">每周学习时间</div></div>
+    </div>`;
+
+  const pct = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = pct + '%';
+  document.getElementById('milestones').innerHTML = planWeeks.map((w, i) => {
+    const color = ['#f59e0b','#f97316','#ef4444','#a855f7','#3b82f6','#06b6d4','#10b981','#84cc16'][i%8];
+    return `<span style="color:${color}">● 第${w.week}周</span>`;
+  }).join(' ');
+
+  weekSections.innerHTML = planWeeks.map((w, i) => {
+    const color = ['#f59e0b','#f97316','#ef4444','#a855f7','#3b82f6','#06b6d4','#10b981','#84cc16'][i%8];
+
+    const tasksHtml = (w.tasks || []).map((t, ti) => `
+      <div class="task-item${t.done ? ' done' : ''}" draggable="true"
+           ondragstart="onDragStart(event, ${i}, ${ti})"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event, ${i}, ${ti})">
+        <span class="drag-handle" title="拖拽排序">⋮⋮</span>
+        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i},${ti})" />
+        <label>${t.text}</label>
+      </div>`).join('');
+
+    const resourcesHtml = (w.resources && w.resources.length > 0) ? `
+      <div style="padding: 0 20px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:14px;">📺</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text-primary);">B站高播放量课程推荐</span>
+          <span style="font-size:11px;color:var(--text-muted);">已按播放量排序</span>
+        </div>
+        <div class="course-grid">
+          ${w.resources.slice(0, 4).map(r => `
+            <a href="${r.url || 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(profile.skill + ' ' + w.title)}" target="_blank" class="course-card" style="text-decoration:none;">
+              <div class="course-thumb">
+                ${r.pic ? `<img src="${r.pic}" alt="" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg, #1e2140, #2d3154)';this.style.display='none';">` : ''}
+                <div class="thumb-overlay"></div>
+                <span class="platform-badge">B站</span>
+                <span class="duration-badge">${r.duration || '--:--'}</span>
+                <span class="play-badge">▶ ${r.play_str || '--'} 播放</span>
+              </div>
+              <div class="course-body">
+                <div class="course-title">${r.title || '相关课程'}</div>
+                <div class="course-meta">
+                  <span>👤 ${r.author || '未知UP主'}</span>
+                  <span>▶ ${r.play_str || '--'} 播放</span>
+                </div>
+                <div class="course-desc">${r.description || '点击查看课程详情'}</div>
+                <div class="course-footer">
+                  <span class="course-tag">${r.tag || profile.skill || '教程'}</span>
+                  <span class="course-link">前往B站观看 →</span>
+                </div>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+        ${w.resources.length > 4 ? `<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--text-muted);">还有 ${w.resources.length - 4} 个推荐课程</div>` : ''}
+      </div>
+    ` : `
+      <div style="padding:0 20px 16px;">
+        <div style="padding:20px;text-align:center;background:#fafbfc;border-radius:8px;color:var(--text-muted);font-size:13px;">
+          🔍 在B站搜索：<a href="https://search.bilibili.com/all?keyword=${encodeURIComponent(profile.skill + ' ' + (w.title || ''))}" target="_blank" style="color:var(--bilibili-pink);">${profile.skill} ${w.title || ''} 教程</a>
+        </div>
+      </div>`;
+
+    const quizHtml = w.quiz ? `
+      <div class="quiz-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:600;">📝 练习题 ${w.quizScore !== undefined ? `<span style="font-size:12px;color:var(--text-muted);font-weight:400;">（得分：${w.quizScore}/${w.quiz.length}）</span>` : ''}</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-quiz" onclick="generateQuiz(${i})" ${w._quizLoading ? 'disabled' : ''}>${w._quizLoading ? '⏳ 生成中...' : '🔄 重新生成'}</button>
+            <button class="btn-quiz" onclick="exportQuiz(${i})" title="导出试题为 Markdown">📥 导出试题</button>
+          </div>
+        </div>
+        ${renderQuizHTML(w, i)}
+      </div>
+    ` : `
+      <div class="quiz-section">
+        <div style="display:flex;align-items:center;justify-content:flex-end;">
+          <button class="btn-quiz" onclick="generateQuiz(${i})" ${w._quizLoading ? 'disabled' : ''}>${w._quizLoading ? '⏳ 生成中...' : '📝 生成练习题'}</button>
+        </div>
+      </div>`;
+
+    const summaryHtml = w.summary ? `
+      <div class="summary-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:600;">📋 知识摘要</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-summary" onclick="generateSummary(${i})" ${w._summaryLoading ? 'disabled' : ''}>${w._summaryLoading ? '⏳ 生成中...' : '🔄 重新生成'}</button>
+            <button class="btn-summary" onclick="exportWeekSummary(${i})" title="导出本周摘要为 Markdown">📥 导出</button>
+          </div>
+        </div>
+        <div class="summary-content">${renderMarkdown(w.summary)}</div>
+      </div>
+    ` : `
+      <div class="summary-section">
+        <div style="display:flex;align-items:center;justify-content:flex-end;">
+          <button class="btn-summary" onclick="generateSummary(${i})" ${w._summaryLoading ? 'disabled' : ''}>${w._summaryLoading ? '⏳ 生成中...' : '📋 生成知识摘要'}</button>
+        </div>
+      </div>`;
+
+    return `
+      <div class="week-section" id="week-${i}">
+        <div class="week-header">
+          <div class="week-number" style="background:${color}">${w.week}</div>
+          <div class="week-title">第${w.week}周：${w.title || ''}</div>
+          <div class="week-task-count">${(w.tasks||[]).length} 个任务</div>
+        </div>
+        <div class="task-list">${tasksHtml}</div>
+        ${resourcesHtml}
+        ${quizHtml}
+        ${summaryHtml}
+      </div>`;
+  }).join('');
+
+  updateSidebarNav();
+  btnExport.style.display = planWeeks.length > 0 ? 'inline-block' : 'none';
+}
+
+function renderQuizHTML(w, wi) {
+  if (!w.quiz) return '';
+  const answered = (w._quizAnswers || []).filter(a => a !== undefined).length;
+  const total = w.quiz.length;
+  return (w.quiz || []).map((q, qi) => {
+    const userAns = (w._quizAnswers || [])[qi];
+    const answered_class = userAns !== undefined ? (userAns === q.answer ? 'correct' : 'wrong') : '';
+    return `<div class="quiz-card">
+      <div class="quiz-q">${qi + 1}. ${q.q}</div>
+      <div class="quiz-opts">
+        ${(q.options || []).map((opt, oi) => `
+          <button class="quiz-opt ${userAns !== undefined && oi === q.answer ? 'correct' : ''} ${userAns !== undefined && oi === userAns && oi !== q.answer ? 'wrong' : ''}"
+                  onclick="answerQuestion(${wi}, ${qi}, ${oi})"
+                  ${userAns !== undefined ? 'disabled' : ''}>
+            ${String.fromCharCode(65 + oi)}. ${opt}
+          </button>
+        `).join('')}
+      </div>
+      <div style="margin-top:8px;text-align:right;">
+        <span class="quiz-ask-btn" onclick="askQuizQuestion('${q.q.replace(/'/g, "\\'")}')" title="让 AI 导师讲解这道题">💡 问下导师</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function generateQuiz(wi) {
+  const w = planWeeks[wi];
+  if (!w || w._quizLoading) return;
+
+  let preference = '';
+  if (w.quiz && w.quiz.length > 0) {
+    preference = prompt(
+      '你希望生成什么样的试题？\n\n' +
+      '例如：\n' +
+      '- 多出几道代码题\n' +
+      '- 增加难度\n' +
+      '- 出10道题\n' +
+      '- 侧重XX知识点\n' +
+      '- 改成判断题\n\n' +
+      '直接点确定则默认生成5道单选题。',
+      ''
+    );
+    if (preference === null) return;
+  }
+
+  w._quizLoading = true;
+  renderDashboard();
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/generate-quiz`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skill: profile.skill,
+        week_title: w.title || '',
+        tasks: w.tasks || [],
+        preference: preference
+      })
+    });
+    const data = await resp.json();
+    if (data.error) {
+      alert('生成练习题失败：' + data.error);
+    } else {
+      w.quiz = data.questions || [];
+      w._quizAnswers = [];
+      w.quizScore = 0;
+    }
+  } catch (err) {
+    alert('生成练习题失败：' + err.message);
+  }
+
+  w._quizLoading = false;
+  planWeeks[wi] = w;
+  renderDashboard();
+  saveData();
+}
+
+function answerQuestion(wi, qi, oi) {
+  const w = planWeeks[wi];
+  if (!w || !w.quiz) return;
+  if (!w._quizAnswers) w._quizAnswers = [];
+  w._quizAnswers[qi] = oi;
+
+  let correct = 0;
+  for (let i = 0; i < w.quiz.length; i++) {
+    if (w._quizAnswers[i] === w.quiz[i].answer) correct++;
+  }
+  w.quizScore = correct;
+
+  // 答错时存入错题集
+  if (oi !== w.quiz[qi].answer) {
+    addWrongAnswer(wi, qi, oi);
+  }
+
+  planWeeks[wi] = w;
+  renderDashboard();
+  saveData();
+}
+
+function addWrongAnswer(wi, qi, userAns) {
+  const w = planWeeks[wi];
+  const q = w.quiz[qi];
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{"archives":[],"activeArchiveId":null}');
+  const idx = data.archives.findIndex(a => a.id === activeArchiveId);
+  if (idx < 0) return;
+  const archive = data.archives[idx];
+  if (!archive.wrongAnswers) archive.wrongAnswers = [];
+
+  // 避免重复添加同一道题
+  const dup = archive.wrongAnswers.find(wa => wa.weekIndex === wi && wa.questionIndex === qi);
+  if (!dup) {
+    archive.wrongAnswers.push({
+      weekIndex: wi,
+      questionIndex: qi,
+      question: q.q,
+      options: q.options,
+      correctAnswer: q.answer,
+      userAnswer: userAns,
+      weekTitle: w.title || '',
+      time: Date.now()
+    });
+  } else {
+    // 更新答案
+    dup.userAnswer = userAns;
+    dup.time = Date.now();
+  }
+
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  renderWrongAnswers();
+}
+
+function removeWrongAnswer(index) {
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{"archives":[],"activeArchiveId":null}');
+  const idx = data.archives.findIndex(a => a.id === activeArchiveId);
+  if (idx < 0) return;
+  const archive = data.archives[idx];
+  if (!archive.wrongAnswers) return;
+  archive.wrongAnswers.splice(index, 1);
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  renderWrongAnswers();
+}
+
+function reviewWrongAnswer(wi, qi) {
+  const el = document.getElementById('week-' + wi);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.boxShadow = '0 0 0 3px #f59e0b';
+    setTimeout(() => { el.style.boxShadow = ''; }, 2500);
+  }
+}
+
+function renderWrongView() {
+  const container = document.getElementById('wrongViewContent');
+  const countEl = document.getElementById('wrongViewCount');
+  if (!container) return;
+
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{"archives":[],"activeArchiveId":null}');
+  const idx = data.archives.findIndex(a => a.id === activeArchiveId);
+  if (idx < 0 || !data.archives[idx].wrongAnswers || data.archives[idx].wrongAnswers.length === 0) {
+    countEl.textContent = '';
+    container.innerHTML = `
+      <div class="empty-state" style="padding:60px 20px;">
+        <div class="empty-icon">🎉</div>
+        <h3>暂无错题</h3>
+        <p>做练习题时答错的题目会自动收集到这里，方便复习巩固。</p>
+      </div>`;
+    return;
+  }
+
+  const wrongs = data.archives[idx].wrongAnswers;
+  const colors = ['#f59e0b','#f97316','#ef4444','#a855f7','#3b82f6','#06b6d4','#10b981','#84cc16'];
+  countEl.textContent = `共 ${wrongs.length} 道错题`;
+
+  // Group by week
+  const grouped = {};
+  wrongs.forEach((wa, i) => {
+    const key = wa.weekTitle || `第${(wa.weekIndex||0)+1}周`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push({ ...wa, _originalIndex: i });
+  });
+
+  container.innerHTML = Object.entries(grouped).map(([week, items], gi) => `
+    <div class="wrong-view-card">
+      <div class="wv-header">
+        <span style="width:10px;height:10px;border-radius:50%;background:${colors[gi%8]};flex-shrink:0;"></span>
+        ${week}
+        <span style="font-size:12px;color:var(--text-muted);font-weight:400;">${items.length}题</span>
+      </div>
+      <div class="wv-body">
+        ${items.map(wa => `
+          <div class="wv-question">
+            <div class="wv-q-title">${wa.question}</div>
+            <div class="wv-options">
+              ${(wa.options || []).map((opt, oi) => {
+                let cls = '';
+                if (oi === wa.correctAnswer) cls = 'correct';
+                else if (oi === wa.userAnswer) cls = 'wrong';
+                return `<div class="wv-opt ${cls}">
+                  <span>${oi === wa.correctAnswer ? '✅' : oi === wa.userAnswer ? '❌' : '○'}</span>
+                  <span>${String.fromCharCode(65 + oi)}. ${opt}</span>
+                </div>`;
+              }).join('')}
+            </div>
+            <div class="wv-actions">
+              <span class="wv-btn" onclick="askQuizQuestion('${wa.question.replace(/'/g, "\\'")}')">💡 问导师</span>
+              <span class="wv-btn danger" onclick="removeWrongAnswer(${wa._originalIndex});renderWrongView();">✕ 移除</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderWrongAnswers() {
+  const section = document.getElementById('wrongSection');
+  const list = document.getElementById('wrongList');
+  const count = document.getElementById('wrongCount');
+  if (!section || !list) return;
+
+  // 只有当前有活跃存档时才显示
+  if (!activeArchiveId) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    document.getElementById('navWrong').style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  const data = JSON.parse(localStorage.getItem(LS_KEY) || '{"archives":[],"activeArchiveId":null}');
+  const idx = data.archives.findIndex(a => a.id === activeArchiveId);
+  const navWrong = document.getElementById('navWrong');
+  const wrongBadge = document.getElementById('wrongBadge');
+
+  if (idx < 0 || !data.archives[idx].wrongAnswers || data.archives[idx].wrongAnswers.length === 0) {
+    count.textContent = '';
+    list.innerHTML = '<div class="wrong-empty">暂无错题</div>';
+    if (navWrong) navWrong.style.display = 'none';
+    return;
+  }
+
+  const wrongAnswers = data.archives[idx].wrongAnswers;
+  count.textContent = `(${wrongAnswers.length}题)`;
+  if (navWrong) {
+    navWrong.style.display = 'flex';
+    wrongBadge.style.display = 'inline';
+    wrongBadge.textContent = wrongAnswers.length;
+  }
+  list.innerHTML = wrongAnswers.map((wa, i) => `
+    <div class="wrong-item" onclick="switchView('wrong');renderWrongView();" title="点击查看错题详情">
+      <span style="color:#ef4444;flex-shrink:0;">✗</span>
+      <span class="wrong-q">${wa.question}</span>
+      <span class="wrong-del" onclick="event.stopPropagation();removeWrongAnswer(${i})" title="移除">×</span>
+    </div>
+  `).join('');
+}
+
+function askQuizQuestion(question) {
+  chatInput.value = '请详细讲解这道题目：' + question;
+  sendChat();
+}
+
+function exportQuiz(wi) {
+  const w = planWeeks[wi];
+  if (!w || !w.quiz || w.quiz.length === 0) return;
+  let md = `# 第${w.week}周：${w.title || ''} — 练习题\n\n`;
+  md += `> ${profile.skill || '技能'} | 学习计划\n\n`;
+  md += `---\n\n`;
+  w.quiz.forEach((q, qi) => {
+    md += `## ${qi + 1}. ${q.q}\n\n`;
+    (q.options || []).forEach((opt, oi) => {
+      md += `- ${String.fromCharCode(65 + oi)}. ${opt}${oi === q.answer ? ' ✅' : ''}\n`;
+    });
+    const userAns = (w._quizAnswers || [])[qi];
+    if (userAns !== undefined) {
+      md += `\n> 你的答案：${String.fromCharCode(65 + userAns)}${userAns === q.answer ? ' ✓ 正确' : ' ✗ 错误'}\n`;
+    }
+    md += '\n';
+  });
+  md += `\n> 由 LearnPath AI 学习规划器生成\n`;
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `第${w.week}周-${w.title || '练习题'}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function generateSummary(wi) {
+  const w = planWeeks[wi];
+  if (!w || w._summaryLoading) return;
+  w._summaryLoading = true;
+  renderDashboard();
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/generate-summary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skill: profile.skill,
+        week_title: w.title || '',
+        tasks: w.tasks || [],
+        resources: w.resources || []
+      })
+    });
+    const data = await resp.json();
+    if (data.error) {
+      alert('生成摘要失败：' + data.error);
+    } else {
+      w.summary = data.summary || '';
+    }
+  } catch (err) {
+    alert('生成摘要失败：' + err.message);
+  }
+
+  w._summaryLoading = false;
+  planWeeks[wi] = w;
+  renderDashboard();
+  saveData();
+}
+
+// ==================== MARKDOWN RENDER ====================
+function renderMarkdown(text) {
+  if (!text) return '';
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  let result = '';
+  let inCodeBlock = false;
+  let codeLang = '';
+  let codeContent = '';
+  const lines = escaped.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('```')) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        codeLang = line.slice(3).trim();
+        codeContent = '';
+      } else {
+        result += `<pre style="background:#1e1e2e;color:#cdd6f4;padding:12px 16px;border-radius:6px;overflow-x:auto;font-size:12px;line-height:1.6;margin:8px 0;">`;
+        if (codeLang) result += `<span style="color:#89b4fa;font-size:10px;">${codeLang}</span>\n`;
+        result += `<code>${codeContent}</code></pre>`;
+        inCodeBlock = false;
+        codeLang = '';
+      }
+      continue;
+    }
+    if (inCodeBlock) {
+      codeContent += (codeContent ? '\n' : '') + line;
+      continue;
+    }
+    let processed = line;
+    processed = processed.replace(/`([^`]+)`/g, '<code style="background:#f0f0f5;padding:2px 6px;border-radius:3px;font-size:12px;color:#d63384;">$1</code>');
+    processed = processed.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    if (processed.startsWith('### ')) {
+      processed = '<h3>' + processed.slice(4) + '</h3>';
+    } else if (processed.startsWith('## ')) {
+      processed = '<h2>' + processed.slice(3) + '</h2>';
+    }
+    result += processed + '<br>';
+  }
+  return result;
+}
+
+// ==================== DRAG & DROP ====================
+let dragSource = null;
+
+function onDragStart(e, wi, ti) {
+  dragSource = { wi, ti };
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', '');
+  e.target.classList.add('drag-over');
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragLeave(e) {
+  e.target.classList.remove('drag-over');
+}
+
+function onDrop(e, wi, ti) {
+  e.preventDefault();
+  if (!dragSource || dragSource.wi !== wi) return;
+  const tasks = planWeeks[wi].tasks;
+  if (!tasks) return;
+  const [moved] = tasks.splice(dragSource.ti, 1);
+  tasks.splice(ti, 0, moved);
+  planWeeks[wi].tasks = tasks;
+  dragSource = null;
+  renderDashboard();
+  saveData();
+}
+
+// ==================== EXPORT ====================
+function exportMarkdown() {
+  if (planWeeks.length === 0) return;
+  let md = `# ${profile.skill || '我的'} 学习计划\n\n`;
+  md += `> **基础：** ${profile.basis || '--'} | **时间：** ${profile.hours || '--'} | **目标：** ${profile.goal || '--'} | **偏好：** ${profile.style || '--'}\n\n`;
+  md += `---\n\n`;
+
+  planWeeks.forEach((w, i) => {
+    md += `## 第${w.week}周：${w.title || ''}\n\n`;
+    (w.tasks || []).forEach(t => {
+      const check = t.done ? '[x]' : '[ ]';
+      md += `- ${check} ${t.text}\n`;
+    });
+    md += '\n';
+    if (w.resources && w.resources.length > 0) {
+      md += `### 📺 推荐课程\n\n`;
+      w.resources.slice(0, 5).forEach(r => {
+        md += `- [${r.title}](${r.url}) — ${r.author} | ▶ ${r.play_str} 播放\n`;
+      });
+      md += '\n';
+    }
+    if (w.summary) {
+      md += `### 📋 知识摘要\n\n${w.summary}\n\n`;
+    }
+    if (w.quiz && w.quiz.length > 0) {
+      md += `### 📝 练习题`;
+      if (w.quizScore !== undefined) { md += ` （得分：${w.quizScore}/${w.quiz.length}）`; }
+      md += `\n\n`;
+      w.quiz.forEach((q, qi) => {
+        md += `${qi + 1}. ${q.q}\n`;
+        (q.options || []).forEach((opt, oi) => {
+          md += `   - ${String.fromCharCode(65 + oi)}. ${opt}${oi === q.answer ? ' ✅' : ''}\n`;
+        });
+        md += '\n';
+      });
+    }
+    md += `---\n\n`;
+  });
+
+  md += `\n> 由 LearnPath AI 学习规划器生成\n`;
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${profile.skill || '学习计划'}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportWeekSummary(wi) {
+  const w = planWeeks[wi];
+  if (!w || !w.summary) return;
+  let md = `# 第${w.week}周：${w.title || ''} — 知识摘要\n\n`;
+  md += `> ${profile.skill || '技能'} | 学习计划\n\n`;
+  md += `---\n\n`;
+  md += w.summary + '\n\n';
+  md += `---\n\n`;
+  if (w.tasks && w.tasks.length > 0) {
+    md += `## 本周任务\n\n`;
+    w.tasks.forEach(t => {
+      md += `- [${t.done ? 'x' : ' '}] ${t.text}\n`;
+    });
+    md += '\n';
+  }
+  md += `\n> 由 LearnPath AI 学习规划器生成\n`;
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `第${w.week}周-${w.title || '知识摘要'}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ==================== TASK TOGGLE ====================
+function toggleTask(wi, ti) {
+  if (planWeeks[wi] && planWeeks[wi].tasks && planWeeks[wi].tasks[ti]) {
+    planWeeks[wi].tasks[ti].done = !planWeeks[wi].tasks[ti].done;
+    renderDashboard();
+    saveData();
+  }
+}
+
+// ==================== VIEW SWITCHING ====================
+function switchView(view) {
+  document.querySelectorAll('.sidebar .nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('wrongView').style.display = 'none';
+
+  if (view === 'overview') {
+    document.getElementById('navOverview').classList.add('active');
+    if (planWeeks.length > 0) {
+      document.getElementById('dashboardView').style.display = 'block';
+    } else {
+      document.getElementById('emptyState').style.display = 'flex';
+    }
+  } else if (view === 'chat') {
+    document.getElementById('navChat').classList.add('active');
+    document.getElementById('chatBadge').style.display = 'none';
+    if (planWeeks.length > 0) {
+      document.getElementById('dashboardView').style.display = 'block';
+    } else {
+      document.getElementById('emptyState').style.display = 'flex';
+    }
+    chatInput.focus();
+  } else if (view === 'wrong') {
+    document.getElementById('navWrong').classList.add('active');
+    document.getElementById('wrongView').style.display = 'block';
+    renderWrongView();
+  }
+}
+
+function focusChat() {
+  chatInput.focus();
+  chatInput.scrollIntoView({ behavior: 'smooth' });
+}
+
+function setPanelMode(mode) {
+  const title = document.getElementById('panelTitle');
+  const badge = document.getElementById('panelBadge');
+  if (mode === 'tutor') {
+    title.textContent = 'AI 学习导师';
+    badge.style.display = 'inline';
+    chatInput.placeholder = '输入学习问题，AI 导师为你解答...';
+  } else {
+    title.textContent = 'AI 学习规划师';
+    badge.style.display = 'none';
+    chatInput.placeholder = '输入你想学习的技能...';
+  }
+}
+
+// ==================== SIDEBAR NAV ====================
+function updateSidebarNav() {
+  const navWeekList = document.getElementById('navWeekList');
+  if (planWeeks.length === 0) {
+    navWeekList.style.display = 'none';
+    return;
+  }
+  navWeekList.style.display = 'flex';
+  const colors = ['#f59e0b','#f97316','#ef4444','#a855f7','#3b82f6','#06b6d4','#10b981','#84cc16'];
+  navWeekList.innerHTML = planWeeks.map((w, i) => `
+    <a class="nav-item" onclick="scrollToWeek(${i})" style="padding-left:32px;font-size:12px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:${colors[i%8]};flex-shrink:0;"></span>
+      第${w.week}周：${(w.title||'').substring(0,8)}
+    </a>
+  `).join('');
+}
+
+function scrollToWeek(i) {
+  switchView('overview');
+  const sections = document.querySelectorAll('.week-section');
+  if (sections[i]) sections[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==================== RESET ====================
+async function resetAll() {
+  archiveCurrentPlan();
+  activeArchiveId = null;
+  sessionId = 'user_' + Date.now();
+  localStorage.setItem('learnpath_sid', sessionId);
+  currentState = 'init';
+  planWeeks = [];
+  profile = {};
+  pendingState = 'init';
+  pendingProfile = null;
+  emptyState.style.display = 'flex';
+  dashboardView.style.display = 'none';
+  pageTitle.textContent = '学习仪表盘';
+  document.getElementById('sidebarSkill').textContent = '准备开始';
+  document.getElementById('navWeekList').style.display = 'none';
+  document.getElementById('navWeekList').innerHTML = '';
+  btnExport.style.display = 'none';
+  chatLog.innerHTML = '';
+  chatChips.innerHTML = '';
+  setPanelMode('plan');
+  renderArchiveList();
+  renderWrongAnswers();
+  addChatMsg('assistant', '👋 你好！我是你的专属学习规划师。<br><br>告诉我你想学什么，我会通过几个问题了解你的情况，然后为你定制一份详细的学习计划，并为每个任务推荐 <b>B站高播放量课程</b>。<br><br>你想学习什么技能？');
+  chatInput.focus();
+}
+
+// ==================== INIT ====================
+window.addEventListener('load', async () => {
+  const restored = loadData();
+  if (restored && planWeeks.length > 0) {
+    // 同步后端 session 状态，确保答疑等功能正常工作
+    try {
+      await fetch(`${API_BASE}/api/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, profile: profile, plan_weeks: planWeeks })
+      });
+    } catch (e) {
+      // 后端不可用时仍然显示本地数据
+    }
+    renderDashboard();
+    renderArchiveList();
+    renderWrongAnswers();
+    setPanelMode('tutor');
+    document.getElementById('sidebarSkill').textContent = profile.skill || '';
+    addChatMsg('assistant', `👋 欢迎回来！你正在学习「<b>${profile.skill || '未命名'}</b>」。<br><br>左侧查看学习仪表盘，右侧对话窗口可以向 AI 导师提问，直接输入学习问题即可。`);
+    setChatChips(['💾 保存并新建学习项目', '📺 推荐更多资源', '✏️ 调整当前计划', '💡 提问学习问题']);
+    btnExport.style.display = 'inline-block';
+  } else if (archives.length > 0 && !activeArchiveId) {
+    renderArchiveList();
+    addChatMsg('assistant', '👋 你好！我是你的专属学习规划师。<br><br>检测到你有历史存档，点击侧边栏「我的存档」即可恢复。或者告诉我你想学习什么新技能？');
+    chatInput.focus();
+  } else {
+    renderArchiveList();
+    addChatMsg('assistant', '👋 你好！我是你的专属学习规划师。<br><br>告诉我你想学什么，我会通过几个问题了解你的情况，然后为你定制一份详细的学习计划，并为每个任务推荐 <b>B站高播放量课程</b>。<br><br>你想学习什么技能？');
+    chatInput.focus();
+  }
+});
+</script>
+</body>
+</html>
